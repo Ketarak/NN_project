@@ -35,9 +35,6 @@ loss, accuracy = model.evaluate(X_test, y_test)
 print(f"\n--- FINAL RESULTS ---")
 print(f"Accuracy on the batch test  : {accuracy * 100:.2f}%")
 
-
-import matplotlib.pyplot as plt
-
 idx = random.randint(0, len(X_test) - 1)
 sample_img = X_test[idx]
 true_label = y_test[idx]

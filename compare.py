@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 models = ['Custom CNN', 'LeNet-5', 'VGG-16', 'ResNet-50', 'Humain (Ref)']
-accuracy_scores = [96, 91.20, 98.50, 99.20, 98.84]
+accuracy_scores = [95.72, 91.20, 98.50, 99.20, 98.84]
 inference_speed = [5, 3, 25, 40] 
 
 plt.figure(figsize=(10, 6))
