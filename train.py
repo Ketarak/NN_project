@@ -95,10 +95,10 @@ X = X.astype('float32') / 255.0
 rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=5, random_state=42)
 
 model_factories = {
-    "Custom_CNN": create_my_cnn,
-    "LeNet5": create_lenet5,
-    "VGG_Small": create_vgg_small
-    #"ResNet50": create_resnet50
+    #"Custom_CNN": create_my_cnn,
+    #"LeNet5": create_lenet5,
+    #"VGG_Small": create_vgg_small
+    "ResNet50": create_resnet50
 }
 
 final_stats = {}
