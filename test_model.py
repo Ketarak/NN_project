@@ -4,62 +4,64 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 import cv2
 import os
-import random
+import csv
 import seaborn as sns
 from sklearn.metrics import confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 
-
 DATA_DIR = "./1" 
 IMG_SIZE = 32
-
-model = load_model('traffic_sign_model.h5')
+MODELS_TO_EVALUATE = ["Custom_CNN_final.h5", "LeNet5_final.h5", "VGG_Small_final.h5", "ResNet50_final.h5"]
+CSV_OUTPUT = "model_comparison_results.csv"
 
 test_df = pd.read_csv(os.path.join(DATA_DIR, 'Test.csv'))
 y_test = test_df['ClassId'].values
 test_images_paths = test_df['Path'].values
 
 X_test = []
-
+print(f"Loading and preprocessing {len(test_images_paths)} images")
 for img_path in test_images_paths:
     full_path = os.path.join(DATA_DIR, img_path)
-    
     img = cv2.imread(full_path)
     img = cv2.resize(img, (IMG_SIZE, IMG_SIZE))
     X_test.append(img)
 
 X_test = np.array(X_test).astype('float32') / 255.0
 
-loss, accuracy = model.evaluate(X_test, y_test)
+results_for_csv = []
+print("\n" + "="*40)
+print(f"{'Model':<20} | {'Accuracy Test':<15}")
+print("-" * 40)
 
-print(f"\n--- FINAL RESULTS ---")
-print(f"Accuracy on the batch test  : {accuracy * 100:.2f}%")
+for model_file in MODELS_TO_EVALUATE:
+    if os.path.exists(model_file):
+        model = load_model(model_file)
+        loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
+        acc_percentage = accuracy * 100
+        print(f"{model_file:<20} | {acc_percentage:>12.2f}%")
+        results_for_csv.append({"Model": model_file, "Accuracy": acc_percentage})
+        if "Custom_CNN" in model_file:
+            y_pred = np.argmax(model.predict(X_test, verbose=0), axis=1)
+            cm = confusion_matrix(y_test, y_pred)
+            plt.figure(figsize=(20, 15))
+            sns.heatmap(cm, annot=False, fmt='d', cmap='Blues')
+            plt.title(f'Confusion matrix - {model_file}')
+            plt.xlabel('Predicted class')
+            plt.ylabel('Real class')
+            plt.savefig('confusion_matrix_final.png')
+            plt.close() 
+            print(f"\nClassification Report ({model_file}) :")
+            print(classification_report(y_test, y_pred))
+    else:
+        print(f"{model_file:<20} | File not found")
 
-idx = random.randint(0, len(X_test) - 1)
-sample_img = X_test[idx]
-true_label = y_test[idx]
+print("="*40)
 
-prediction = model.predict(np.expand_dims(sample_img, axis=0))
-predicted_class = np.argmax(prediction)
+keys = results_for_csv[0].keys()
+with open(CSV_OUTPUT, 'w', newline='') as output_file:
+    dict_writer = csv.DictWriter(output_file, fieldnames=keys)
+    dict_writer.writeheader()
+    dict_writer.writerows(results_for_csv)
 
-print(f"Real class : {true_label}")
-print(f"Predict class : {predicted_class}")
-
-plt.imshow(cv2.cvtColor((sample_img * 255).astype(np.uint8), cv2.COLOR_BGR2RGB))
-plt.title(f"Real: {true_label} | Predictions: {predicted_class}")
-plt.show()
-
-y_pred_probs = model.predict(X_test)
-y_pred = np.argmax(y_pred_probs, axis=1)
-
-cm = confusion_matrix(y_test, y_pred)
-
-plt.figure(figsize=(20, 15))
-sns.heatmap(cm, annot=False, fmt='d', cmap='Blues')
-plt.xlabel('Predicted Classes')
-plt.ylabel('Real Classes')
-plt.title('Condusion matrix - GTSRB')
-plt.show()
-
-print("\nDetailed classification report :")
-print(classification_report(y_test, y_pred))
+print(f"\nResults saved in file : {CSV_OUTPUT}")
+print("Confusion matrix saved as : confusion_matrix_final.png")
